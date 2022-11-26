@@ -1,9 +1,9 @@
-const { showConsole, hideConsole } = require('node-hide-console-window');
 const { setTimeout } = require('timers/promises');
 const discord_rpc = require('discord-rpc');
 const os = require('os');
 const activeWindow = require('active-win');
 const checkDiskSpace = require('check-disk-space').default;
+const systeminfo = require('systeminformation');
 
 const client = new discord_rpc.Client({ transport: 'ipc' });
 
@@ -51,7 +51,7 @@ var activity_data = {
     details: '[Details]',
     state: '[State]',
 
-    timestamps: { start: Date.now() },
+    timestamps: { start: 1 },
 
     assets: {
       large_image: 'os_windows',
@@ -75,7 +75,7 @@ function Print(type, output) {
   console.log(`[${type}]: ${output}`)
 }
 
-function formatBytes(bytes, decimals = 2) {
+function formatBytes(bytes, decimals = 2) { // Totally not stolen from stackoverflow
   if (!+bytes) return '0 Bytes'
 
   const k = 1024
@@ -85,6 +85,12 @@ function formatBytes(bytes, decimals = 2) {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
 
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
+}
+
+function pad(num, size) {
+  num = num.toString();
+  while (num.length < size) num = "0" + num;
+  return num;
 }
 
 function CapitalizeFirstLetter(string) { 
@@ -111,7 +117,7 @@ function SetWindowIconData() {
 }
 
 function ChangeSlide() {
-  var pos = slide % 3
+  var pos = slide % 6
 
   switch (pos) {
     case 0:
@@ -124,6 +130,35 @@ function ChangeSlide() {
       })
       break;
     case 2:
+      var total_memory = os.totalmem();
+      var free_memory = os.freemem();
+      var memory_usage = (total_memory - free_memory) / total_memory;
+
+      activity_data.activity.details = `Memory Usage: ${Math.round(memory_usage * 100)}% | ${formatBytes(total_memory, 1)}`;
+
+      break;
+    case 3:
+      var cpu = os.cpus();
+
+      activity_data.activity.details = `CPU: ${cpu[0].model}`;
+
+      os.version
+
+      break;
+    case 4:
+      var date = new Date();
+
+      var mins = date.getMinutes();
+      var hours = date.getHours();
+      var am_pm = hours >= 12 ? 'PM' : 'AM';
+
+      hours = hours % 12
+      hours = hours ? hours : 12;
+
+      activity_data.activity.details = `My Time: ${hours}:${pad(mins, 2)} ${am_pm}`;
+
+      break;
+    case 5:
       activity_data.activity.details = config.LastSlide;
       break;
     default:
@@ -152,8 +187,9 @@ Print('Info', 'Attempting to log in...');
 client.login({ clientId: config.ClientId }).catch(console.error);
 client.on('ready', async () => {
   Print('Info', 'Presence loaded.');
-  
+
   activity_data.activity.assets.large_image = icons.os[os_platform] || 'os_unknown';
+  activity_data.activity.timestamps.start = Math.round(new Date().getTime() / 1000) - os.uptime();
 
   // Update
   (async () => {
