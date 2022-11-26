@@ -31,6 +31,8 @@ const icons = {
     'Notepad': 'app_notepad',
     'Settings': 'app_win_settings',
 
+    'WindowsTerminal': 'app_terminal',
+
     'Discord': 'app_discord',
 
     'Google Chrome': 'app_chrome',
@@ -88,7 +90,7 @@ function SetWindowData() {
 }
 
 function SetWindowIconData() {
-  activity_data.activity.assets.small_image = icons.apps[currentWindow] || 'app_unknown';
+  activity_data.activity.assets.small_image = icons.apps[currentWindow] || 'nothing';
   activity_data.activity.assets.small_text = currentWindow || 'unknown app';
 
   Print('Icon', 'Set Icon data');
@@ -100,7 +102,7 @@ async function GetWindow() {
   Print('Get Window', 'Got Active Window');
 
   if (data == undefined) {
-    return 'Nothing';
+    return ' ';
   }
 
   return data.owner.name;
