@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "active-win": "^7.7.2",
+    "check-disk-space": "^3.3.1",
     "discord-rpc": "^4.0.1",
     "node-hide-console-window": "^2.1.1"
   }

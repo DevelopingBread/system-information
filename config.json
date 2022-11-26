@@ -1,7 +1,12 @@
 {
   "ClientId": "1045901671374528603",
 
+  "Disk": "C:",
+
+  "LastSlide": "Learning how to get out of vim 💀",
+
   "Buttons": [
-    { "label": "Sus???", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
+    { "label": "Discord Active Dev Bage Repo", "url": "https://github.com/DevelopingBread/discord-active-dev-badge" },
+    { "label": "Project Repo", "url": "https://github.com/DevelopingBread/system-information" }
   ]
 }

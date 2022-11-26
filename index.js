@@ -2,8 +2,8 @@ const { showConsole, hideConsole } = require('node-hide-console-window');
 const { setTimeout } = require('timers/promises');
 const discord_rpc = require('discord-rpc');
 const os = require('os');
-const activeWindow = require('active-win')
-const Thread = require('worker_threads')
+const activeWindow = require('active-win');
+const checkDiskSpace = require('check-disk-space').default;
 
 const client = new discord_rpc.Client({ transport: 'ipc' });
 
@@ -67,20 +67,34 @@ var activity_data = {
 
 // Variables
 var currentWindow = '';
+var slide = 0;
+var mousex, mousey = 0;
 
 // Functions
 function Print(type, output) {
   console.log(`[${type}]: ${output}`)
 }
 
-function Update() {
-  Print('Update', 'Updating activity.');
-  client.request('SET_ACTIVITY', activity_data);
-  lastActivityData = activity_data;
+function formatBytes(bytes, decimals = 2) {
+  if (!+bytes) return '0 Bytes'
+
+  const k = 1024
+  const dm = decimals < 0 ? 0 : decimals
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`
 }
 
 function CapitalizeFirstLetter(string) { 
   return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function Update() {
+  Print('Update', 'Updating activity.');
+  client.request('SET_ACTIVITY', activity_data);
+  lastActivityData = activity_data;
 }
 
 function SetWindowData() {
@@ -96,13 +110,35 @@ function SetWindowIconData() {
   Print('Icon', 'Set Icon data');
 }
 
+function ChangeSlide() {
+  var pos = slide % 3
+
+  switch (pos) {
+    case 0:
+      activity_data.activity.details = `${ CapitalizeFirstLetter( (icons.os[os_platform] || 'os_unknown').replace('os_', '') ) } ${os_platform} | User: ${os_user}`;
+      break;
+    case 1:
+      checkDiskSpace(config.Disk).then(async (diskspace) => {
+        activity_data.activity.details = `Size: ${ formatBytes(diskspace.size, 1) } | Free Space ${ formatBytes(diskspace.free, 1) }`;
+        Update();
+      })
+      break;
+    case 2:
+      activity_data.activity.details = config.LastSlide;
+      break;
+    default:
+  }
+
+  slide += 1;
+}
+
 async function GetWindow() {
   var data = await activeWindow();
 
   Print('Get Window', 'Got Active Window');
 
   if (data == undefined) {
-    return ' ';
+    return '--';
   }
 
   return data.owner.name;
@@ -119,8 +155,6 @@ client.on('ready', async () => {
   
   activity_data.activity.assets.large_image = icons.os[os_platform] || 'os_unknown';
 
-  activity_data.activity.details = `${ CapitalizeFirstLetter( (icons.os[os_platform] || 'os_unknown').replace('os_', '') ) } ${os_platform} | User: ${os_user}`;
-
   // Update
   (async () => {
     while (true) {
@@ -129,15 +163,18 @@ client.on('ready', async () => {
       currentWindow = replaceNames[currentWindow] || currentWindow;
       currentWindow = currentWindow.replace('.exe', '');
 
+      console.log('\n');
+
       // Functions
       SetWindowData();
       SetWindowIconData();
+      ChangeSlide();
   
       // Update
       Update();
 
       // Timeout
-      await setTimeout(2500);
+      await setTimeout(5000);
     }
   })();
 })
